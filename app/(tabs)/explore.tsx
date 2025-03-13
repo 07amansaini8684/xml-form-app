@@ -1,109 +1,261 @@
-import { StyleSheet, Image, Platform } from 'react-native';
+import React, { useEffect, useState, useRef } from "react";
+import { Text, View, ScrollView, SafeAreaView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from "react-native";
+import * as FileSystem from "expo-file-system";
+import { Asset } from "expo-asset";
+// @ts-ignore
+import { parseString } from "react-native-xml2js";
 
-import { Collapsible } from '@/components/Collapsible';
-import { ExternalLink } from '@/components/ExternalLink';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-
-export default function TabTwoScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Explore</ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image source={require('@/assets/images/react-logo.png')} style={{ alignSelf: 'center' }} />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Custom fonts">
-        <ThemedText>
-          Open <ThemedText type="defaultSemiBold">app/_layout.tsx</ThemedText> to see how to load{' '}
-          <ThemedText style={{ fontFamily: 'SpaceMono' }}>
-            custom fonts such as this one.
-          </ThemedText>
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/versions/latest/sdk/font">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user's current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful <ThemedText type="defaultSemiBold">react-native-reanimated</ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
-  );
+interface FormData {
+  customerName: string;
+  forename: string;
+  date: {
+    day: string;
+    month: string;
+    year: string;
+  };
+  signature: string;
+  stage: string | null;
 }
 
-const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
-  },
-  titleContainer: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-});
+const Index = () => {
+  const [fileContent, setFileContent] = useState<string | null>(null);
+  const [parsedData, setParsedData] = useState<any>(null);
+  const [gElements, setGElements] = useState<any[]>([]);
+  const [gElementsData, setGElementsData] = useState<any[]>([]);
+  const [formData, setFormData] = useState<FormData>({
+    customerName: '',
+    forename: '',
+    date: {
+      day: '',
+      month: '',
+      year: '',
+    },
+    signature: '',
+    stage: null,
+  });
+  
+  // Create refs for date inputs to handle focus management
+  const dayInputRef = useRef<TextInput>(null);
+  const monthInputRef = useRef<TextInput>(null);
+  const yearInputRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    const loadFile = async () => {
+      try {
+        const asset = Asset.fromModule(require("../../assets/task_xml.txt"));
+        await asset.downloadAsync();
+
+        const fileUri = asset.localUri;
+        if (!fileUri) throw new Error("File URI is null");
+
+        const content = await FileSystem.readAsStringAsync(fileUri);
+        setFileContent(content);
+
+        parseString(content, (err: any, result: any) => {
+          if (err) {
+            console.error("XML Parsing Error:", err);
+            return;
+          }
+
+          // Access nested elements with proper optional chaining
+          const extractedGElements =
+            result?.div?.div?.[0]?.svg?.[0]?.svg?.[0]?.g || [];
+
+          setParsedData(result);
+          setGElements(extractedGElements);
+        });
+      } catch (error) {
+        console.error("Error reading file:", error);
+      }
+    };
+
+    loadFile();
+  }, []);
+
+  useEffect(() => {
+    if (!gElements) console.log("No g elements found");
+    const [, secondElement] = gElements;
+    const g = secondElement?.g ?? [];
+    setGElementsData(g);
+    const rect = g[0]?.rect ?? [];
+    console.log("The Chosen rect elements:", rect);
+  }, [fileContent, gElements]);
+
+  const handleInputChange = (fieldName: string, value: string) => {
+    if (fieldName.includes('.')) {
+      // Handle nested fields like date.day
+      const [parent, child] = fieldName.split('.');
+      setFormData(prev => ({
+        ...prev,
+        [parent]: {
+          ...prev[parent as keyof FormData],
+          [child]: value
+        }
+      }));
+      
+      // Auto-focus next field for date inputs
+      if (child === 'day' && value.length === 2) {
+        monthInputRef.current?.focus();
+      } else if (child === 'month' && value.length === 2) {
+        yearInputRef.current?.focus();
+      }
+    } else {
+      // Handle regular fields
+      setFormData(prev => ({
+        ...prev,
+        [fieldName]: value
+      }));
+    }
+    
+    // Log the updated form data
+    console.log(`Field ${fieldName} updated to: ${value}`);
+    setTimeout(() => {
+      console.log("Current form data:", formData);
+    }, 0);
+  };
+
+  const handleSubmit = () => {
+    console.log("Form submitted with data:", formData);
+  };
+
+  // Helper function to create character boxes with wrapping
+  const renderCharacterBoxes = (fieldName: string, value: string, maxLength: number, onChange: (text: string) => void, inputRef?: React.RefObject<TextInput>) => {
+    const characters = value.split('').concat(Array(maxLength - value.length).fill(''));
+    
+    return (
+      <View>
+        <View className="flex-row flex-wrap">
+          {Array.from({ length: maxLength }).map((_, index) => (
+            <View 
+              key={`${fieldName}-${index}`}
+              className="border border-zinc-900 mb-1 items-center justify-center"
+              style={{ width: 30, height: 30 }}
+            >
+              <Text className="text-black text-center">{characters[index] || ''}</Text>
+            </View>
+          ))}
+        </View>
+        {/* Hidden TextInput to capture keyboard input */}
+        <TextInput
+          ref={inputRef}
+          className="absolute opacity-0 w-full h-full"
+          value={value}
+          onChangeText={onChange}
+          maxLength={maxLength}
+          keyboardType={fieldName.includes('date') ? 'numeric' : 'default'}
+        />
+      </View>
+    );
+  };
+
+  const renderFormElements = () => {
+    if (!gElementsData.length) {
+      return <Text className="text-zinc-900">No form elements found</Text>;
+    }
+
+    return (
+      <View className="p-4">
+        {/* Customer Name */}
+        <View className="mb-6">
+          <Text className="text-zinc-700 mb-2 font-medium">Customer Name</Text>
+          <TouchableOpacity activeOpacity={0.8} className="relative" style={{ height: 70 }}>
+            {renderCharacterBoxes('customerName', formData.customerName, 20, 
+              (text) => handleInputChange('customerName', text))}
+          </TouchableOpacity>
+        </View>
+
+        {/* Forename */}
+        <View className="mb-6">
+          <Text className="text-zinc-700 mb-2 font-medium">Forename</Text>
+          <TouchableOpacity activeOpacity={0.8} className="relative" style={{ height: 70 }}>
+            {renderCharacterBoxes('forename', formData.forename, 20, 
+              (text) => handleInputChange('forename', text))}
+          </TouchableOpacity>
+        </View>
+
+        {/* Date */}
+        <View className="mb-6">
+          <Text className="text-zinc-700 mb-2 font-medium">Date</Text>
+          <View className="flex-row items-center">
+            <TouchableOpacity activeOpacity={0.8} className="relative" style={{ height: 30, width: 70 }}>
+              {renderCharacterBoxes('date.day', formData.date.day, 2, 
+                (text) => handleInputChange('date.day', text), dayInputRef)}
+            </TouchableOpacity>
+            <Text className="mx-1 text-xl">/</Text>
+            <TouchableOpacity activeOpacity={0.8} className="relative" style={{ height: 30, width: 70 }}>
+              {renderCharacterBoxes('date.month', formData.date.month, 2, 
+                (text) => handleInputChange('date.month', text), monthInputRef)}
+            </TouchableOpacity>
+            <Text className="mx-1 text-xl">/</Text>
+            <TouchableOpacity activeOpacity={0.8} className="relative" style={{ height: 30, width: 130 }}>
+              {renderCharacterBoxes('date.year', formData.date.year, 4, 
+                (text) => handleInputChange('date.year', text), yearInputRef)}
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Signature */}
+        <View className="mb-6">
+          <Text className="text-zinc-700 mb-2 font-medium">Signature</Text>
+          <View className="border border-black h-24 w-full">
+            <TextInput
+              className="h-full w-full p-2"
+              multiline={true}
+              value={formData.signature}
+              onChangeText={(text) => handleInputChange('signature', text)}
+            />
+          </View>
+        </View>
+
+        {/* Stage Radio Buttons */}
+        <View className="mb-6">
+          <Text className="text-zinc-700 mb-2 font-medium">Stage</Text>
+          <View>
+            {['Stage - 1', 'Stage - 2', 'Stage - 3'].map((option) => (
+              <TouchableOpacity
+                key={option}
+                className="flex-row items-center mb-2"
+                onPress={() => handleInputChange('stage', option)}
+              >
+                <View className={`h-5 w-5 rounded-full border border-gray-400 mr-2 items-center justify-center ${formData.stage === option ? 'bg-white' : 'bg-white'}`}>
+                  {formData.stage === option && (
+                    <View className="h-3 w-3 rounded-full bg-black" />
+                  )}
+                </View>
+                <Text>{option}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Submit Button */}
+        <TouchableOpacity 
+          className="bg-zinc-700 py-3 px-4 rounded-lg items-center mt-4"
+          onPress={handleSubmit}
+        >
+          <Text className="text-white font-medium">Submit Form</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  return (
+    <SafeAreaView className="flex-1 bg-white">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        className="flex-1"
+      >
+        <View className="px-4 py-10">
+          <Text className="text-2xl font-bold text-zinc-700 my-4">
+            xml-form-app:
+          </Text>
+          <ScrollView className="bg-white rounded-lg shadow-sm">
+            {renderFormElements()}
+          </ScrollView>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+};
+
+export default Index;
