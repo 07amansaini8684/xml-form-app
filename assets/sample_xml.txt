@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form>
+  <field>
+    <type>text</type>
+    <label>Full Name</label>
+    <defaultValue></defaultValue>
+    <required>true</required>
+  </field>
+  <field>
+    <type>text</type>
+    <label>Email Address</label>
+    <defaultValue></defaultValue>
+    <required>true</required>
+  </field>
+  <field>
+    <type>date</type>
+    <label>Date of Birth</label>
+    <defaultValue></defaultValue>
+    <required>true</required>
+  </field>
+  <field>
+    <type>radio</type>
+    <label>Preferred Contact Method</label>
+    <options>
+      <option>Email</option>
+      <option>Phone</option>
+      <option>Mail</option>
+    </options>
+    <defaultValue>Email</defaultValue>
+    <required>true</required>
+  </field>
+  <field>
+    <type>text</type>
+    <label>Phone Number</label>
+    <defaultValue></defaultValue>
+    <required>false</required>
+  </field>
+  <field>
+    <type>radio</type>
+    <label>Gender</label>
+    <options>
+      <option>Male</option>
+      <option>Female</option>
+      <option>Non-binary</option>
+      <option>Prefer not to say</option>
+    </options>
+    <defaultValue></defaultValue>
+    <required>false</required>
+  </field>
+  <field>
+    <type>signature</type>
+    <label>Signature</label>
+    <defaultValue></defaultValue>
+    <required>true</required>
+  </field>
+</form>

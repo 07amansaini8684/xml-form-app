@@ -1,0 +1,31 @@
+<form>
+  <field>
+    <name>full_name</name>
+    <type>text</type>
+    <label>Full Name</label>
+    <required>true</required>
+  </field>
+  <field>
+    <name>birth_date</name>
+    <type>date</type>
+    <label>Date of Birth</label>
+  </field>
+  <field>
+    <type>radio</type>
+    <label>Gender</label>
+    <options>
+      <option>Male</option>
+      <option>Female</option>
+      <option>Non-binary</option>
+      <option>Prefer not to say</option>
+    </options>
+    <defaultValue></defaultValue>
+    <required>false</required>
+  </field>
+   <field>
+    <type>signature</type>
+    <label>Signature</label>
+    <defaultValue></defaultValue>
+    <required>true</required>
+  </field>
+</form>
