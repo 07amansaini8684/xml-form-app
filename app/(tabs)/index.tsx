@@ -55,11 +55,11 @@ const XmlParserScreen: React.FC = () => {
     Alert.alert(
       "XML Input Guidelines",
       "Your XML should include these field types:\n\n" +
-        "- Text Fields (textField, text, input)\n" +
-        "- Date Input (dateInput, date)\n" +
-        "- Radio Buttons (radioGroup, radio)\n" +
-        "- Drawing Field (drawingField, signature)\n\n" +
-        "The parser supports various XML formats and will try to extract form fields from any structure. If required fields are missing, defaults will be added."
+      "- Text Fields (textField, text, input)\n" +
+      "- Date Input (dateInput, date)\n" +
+      "- Radio Buttons (radioGroup, radio)\n" +
+      "- Drawing Field (drawingField, signature)\n\n" +
+      "The parser supports various XML formats and will try to extract form fields from any structure. If required fields are missing, defaults will be added."
     );
   };
 
@@ -120,8 +120,7 @@ const XmlParserScreen: React.FC = () => {
         console.error("Form extraction error:", error);
         Alert.alert(
           "Form Extraction Error",
-          `Failed to extract form fields from XML: ${
-            error instanceof Error ? error.message : String(error)
+          `Failed to extract form fields from XML: ${error instanceof Error ? error.message : String(error)
           }\n\nDefault form will be shown.`
         );
 
@@ -336,10 +335,10 @@ const XmlParserScreen: React.FC = () => {
               ? optionsArray.map((opt: any) => {
                   if (typeof opt === "string") return opt;
                   if (opt.label && Array.isArray(opt.label))
-                    return opt.label[0] || "";
+                    return String(opt.label[0] || "");
                   if (opt.value && Array.isArray(opt.value))
-                    return opt.value[0] || "";
-                  if (opt._) return opt._; // Handle xml2js object with _ property
+                    return String(opt.value[0] || "");
+                  if (opt._) return String(opt._); // Handle xml2js object with _ property
                   return String(opt);
                 })
               : [];
@@ -348,22 +347,23 @@ const XmlParserScreen: React.FC = () => {
             options = field.option.map((opt: any) => {
               if (typeof opt === "string") return opt;
               if (opt.label && Array.isArray(opt.label))
-                return opt.label[0] || "";
+                return String(opt.label[0] || "");
               if (opt.value && Array.isArray(opt.value))
-                return opt.value[0] || "";
-              if (opt._ && typeof opt._ === "string") return opt._; // Handle xml2js object with _ property
-              if (opt.$ && opt.$.value) return opt.$.value;
-              return opt.$ && opt.$.id ? opt.$.id : String(opt);
+                return String(opt.value[0] || "");
+              if (opt._ && typeof opt._ === "string") return String(opt._); // Handle xml2js object with _ property
+              if (opt.$ && opt.$.value) return String(opt.$.value);
+              return opt.$ && opt.$.id ? String(opt.$.id) : String(opt);
             });
           }
         }
+        
 
         // Handle fdtType for task_xml.txt structure
         if (field.$ && field.$.fdtType) {
           switch (
-            typeof field.$.fdtType === "string"
-              ? field.$.fdtType.toLowerCase()
-              : ""
+          typeof field.$.fdtType === "string"
+            ? field.$.fdtType.toLowerCase()
+            : ""
           ) {
             case "textfield":
             case "text":
@@ -668,9 +668,8 @@ const XmlParserScreen: React.FC = () => {
           {showJsonResult ? (
             <ScrollView className="p-2">
               <Text
-                className={`${
-                  Platform.OS === "ios" ? "font-mono" : ""
-                } text-sm`}
+                className={`${Platform.OS === "ios" ? "font-mono" : ""
+                  } text-sm`}
               >
                 {parsedResult}
               </Text>
@@ -805,6 +804,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ fields }) => {
               </View>
             );
 
+          // In the DynamicForm component, the radio case needs to be fixed:
           case "radio":
             return (
               <View key={field.id} className="mb-4">
@@ -812,20 +812,24 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ fields }) => {
                   {labelText}
                   {field.required ? " *" : ""}
                 </Text>
-                {field.options?.map((option, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    className="flex-row items-center py-2"
-                    onPress={() => handleChange(field.id, option)}
-                  >
-                    <View className="h-6 w-6 rounded-full border-2 border-zinc-500 items-center justify-center mr-2">
-                      {formValues[field.id] === option && (
-                        <View className="w-3 h-3 rounded-full bg-zinc-500" />
-                      )}
-                    </View>
-                    <Text className="text-base">{safeToString(option)}</Text>
-                  </TouchableOpacity>
-                ))}
+                {Array.isArray(field.options) && field.options.map((option, index) => {
+                  // Ensure option is converted to string to avoid object references as keys
+                  const optionString = safeToString(option);
+                  return (
+                    <TouchableOpacity
+                      key={`${field.id}_${index}`}
+                      className="flex-row items-center py-2"
+                      onPress={() => handleChange(field.id, optionString)}
+                    >
+                      <View className="h-6 w-6 rounded-full border-2 border-zinc-500 items-center justify-center mr-2">
+                        {formValues[field.id] === optionString && (
+                          <View className="w-3 h-3 rounded-full bg-zinc-500" />
+                        )}
+                      </View>
+                      <Text className="text-base">{optionString}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             );
 

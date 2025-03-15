@@ -1,31 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <form>
-  <field>
-    <name>full_name</name>
+  <!-- Text Field with ID -->
+  <field id="full_name">
     <type>text</type>
     <label>Full Name</label>
     <required>true</required>
   </field>
-  <field>
-    <name>birth_date</name>
+
+  <!-- Date Field with ID -->
+  <field id="birth_date">
     <type>date</type>
     <label>Date of Birth</label>
+    <required>true</required>
   </field>
-  <field>
+
+  <!-- Radio Group with ID -->
+  <field id="gender">
     <type>radio</type>
     <label>Gender</label>
     <options>
-      <option>Male</option>
-      <option>Female</option>
-      <option>Non-binary</option>
-      <option>Prefer not to say</option>
+      <option id="male">Male</option>
+      <option id="female">Female</option>
+      <option id="non_binary">Non-binary</option>
+      <option id="prefer_not_say">Prefer not to say</option>
     </options>
-    <defaultValue></defaultValue>
     <required>false</required>
   </field>
-   <field>
+
+  <!-- Signature Field with ID -->
+  <field id="signature">
     <type>signature</type>
     <label>Signature</label>
-    <defaultValue></defaultValue>
     <required>true</required>
+  </field>
+
+  <!-- Additional Field with Nested ID -->
+  <field id="contact_info">
+    <type>group</type>
+    <label>Contact Information</label>
+    <fields>
+      <field id="email">
+        <type>text</type>
+        <label>Email Address</label>
+      </field>
+      <field id="phone">
+        <type>text</type>
+        <label>Phone Number</label>
+      </field>
+    </fields>
   </field>
 </form>
